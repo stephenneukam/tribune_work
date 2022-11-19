@@ -1,0 +1,48 @@
+Loading libraries
+```{r}
+library(tidyverse)
+library(janitor)
+```
+Loading in Trump donor data
+```{r}
+maga_pac <- read_csv("data/maga_pac.csv") %>%
+  select(-committee_id, -report_type:-entity_type, -unused_contbr_id:-recipient_committee_designation, -contributor_id:-memo_code_full, -contributor_aggregate_ytd:-conduit_committee_id, -conduit_committee_name:-line_number_label) %>%
+  clean_names() %>%
+  mutate(contributor_zip = as.numeric(contributor_zip))
+save_america_pac <- read_csv("data/save_america_pac.csv") %>%
+  select(-committee_id, -report_type:-entity_type, -unused_contbr_id:-recipient_committee_designation, -contributor_id:-memo_code_full, -contributor_aggregate_ytd:-conduit_committee_id, -conduit_committee_name:-line_number_label) %>%
+  clean_names()
+trump_victory <- read_csv("data/trump_victory.csv") %>%
+  select(-committee_id, -report_type:-entity_type, -unused_contbr_id:-recipient_committee_designation, -contributor_id:-memo_code_full, -contributor_aggregate_ytd:-conduit_committee_id, -conduit_committee_name:-line_number_label) %>%
+  clean_names()
+```
+Merging these two datasets into one master dataset
+```{r}
+master <- maga_pac %>%
+  bind_rows(save_america_pac, trump_victory)
+###
+# Making a full name column
+###
+master <- master %>%
+  mutate(full_name = paste0(contributor_first_name, " ", contributor_last_name))
+```
+Who donated the most to Trump from Texas?
+```{r}
+top_donors <- master %>%
+  group_by(full_name, contributor_city) %>%
+  summarise(total = sum(contribution_receipt_amount)) %>%
+  arrange(desc(total))
+
+###
+# Filter top donors by donors who contributed more than $10,000
+###
+elite_donors <- top_donors %>%
+  filter(total > 9999) %>%
+  filter(full_name != "NA NA")
+
+elite_donors
+```
+
+
+
+
